@@ -1,3 +1,7 @@
 #Differential robot for Gazebo L1
 
-roslaunch diff_robot diff_robot.launch
+## For empty world
+roslaunch diff_robot diff_robot.launch world:=empty
+
+## For house world
+roslaunch diff_robot diff_robot.launch world:=house
