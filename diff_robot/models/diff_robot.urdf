@@ -1,0 +1,95 @@
+<robot name="l1_diff_robot">
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0 0 0" />
+      <mass value="5.0" />
+      <inertia  ixx="0.0" ixy="0.0"  ixz="0.0"  iyy="0.0"  iyz="0.0"  izz="0.0" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <box size=".4 .2 .1" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <box size=".4 .2 .1" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="caster">
+    <visual>
+      <geometry>
+        <sphere radius="0.05"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.05"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="base_to_caster" type="fixed">
+    <parent link="base_link"/>
+    <child link="caster"/>
+    <origin xyz="-0.15 0 -0.05"/>
+  </joint>
+
+  <link name="left_wheel">
+  <inertial>
+    <origin xyz="0 0 0" />
+    <mass value="1.0" />
+    <inertia  ixx="0.0" ixy="0.0"  ixz="0.0"  iyy="0.0"  iyz="0.0"  izz="0.0" />
+  </inertial>
+    <visual>
+      <geometry>
+        <cylinder radius="0.1" length="0.05"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.1" length="0.05"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="base_to_lwheel" type="continuous">
+    <parent link="base_link"/>
+    <child link="left_wheel"/>
+    <axis xyz="0 0 1"/>
+    <origin xyz="0.15 0.13 0" rpy="0 1.5707 1.5707"/>
+  </joint>
+
+  <link name="right_wheel">
+  <inertial>
+    <origin xyz="0 0 0" />
+    <mass value="1.0" />
+    <inertia  ixx="0.0" ixy="0.0"  ixz="0.0"  iyy="0.0"  iyz="0.0"  izz="0.0" />
+  </inertial>
+    <visual>
+      <geometry>
+        <cylinder radius="0.1" length="0.05"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.1" length="0.05"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="base_to_rwheel" type="continuous">
+    <parent link="base_link"/>
+    <child link="right_wheel"/>
+    <axis xyz="0 0 1"/>
+    <origin xyz="0.15 -0.13 0" rpy="0 1.5707 1.5707"/>
+  </joint>
+
+  <gazebo>
+    <plugin name="differential_drive_controller" filename="libdiffdrive_plugin.so">
+    </plugin>
+  </gazebo>
+</robot>
