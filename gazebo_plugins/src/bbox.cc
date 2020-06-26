@@ -158,6 +158,8 @@ void Bbox::OnScan(ConstLaserScanStampedPtr &_msg)
 {
   // We got a new message from the Gazebo sensor.  Stuff a
   // corresponding ROS message and publish it.
+  msgs::Contacts contacts;
+  contacts = this->parentSensor->Contacts();
   sensor_msgs::LaserScan laser_msg;
   laser_msg.header.stamp = ros::Time(_msg->time().sec(), _msg->time().nsec());
   laser_msg.header.frame_id = this->frame_name_;
