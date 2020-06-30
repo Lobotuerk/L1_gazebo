@@ -20,6 +20,8 @@
 #include <gazebo/sensors/SensorTypes.hh>
 #include <gazebo/plugins/RayPlugin.hh>
 #include <gazebo_plugins/gazebo_ros_utils.h>
+#include <gazebo/physics/RayShape.hh>
+#include <visualization_msgs/Marker.h>
 
 #include <gazebo_plugins/PubQueue.h>
 

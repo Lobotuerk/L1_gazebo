@@ -11,6 +11,9 @@
 #include <gazebo/sensors/RaySensor.hh>
 #include <gazebo/sensors/SensorTypes.hh>
 #include <gazebo/transport/transport.hh>
+#include <gazebo/physics/RayShape.hh>
+#include <ignition/math/Box.hh>
+#include <ignition/math/Vector3.hh>
 
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
@@ -156,10 +159,25 @@ void Bbox::LaserDisconnect()
 // Convert new Gazebo message to ROS message and publish it
 void Bbox::OnScan(ConstLaserScanStampedPtr &_msg)
 {
+  visualization_msgs::Marker line_list;
+  physics::MultiRayShapePtr multiRay = this->parent_ray_sensor_->LaserShape();
+  unsigned int raycount = multiRay->RayCount();
+  // ROS_INFO_STREAM_NAMED("laser", "ray count: " << raycount);
+  for (unsigned int i = 0; i < raycount; i++)
+  {
+    physics::RayShapePtr temp_ray = multiRay->Ray(i);
+    std::string entityName;
+    double dist;
+    temp_ray->GetIntersection(dist,entityName);
+    ROS_INFO_STREAM_NAMED("laser", "Entity name: " << entityName);
+    physics::EntityPtr entity = this->world_->EntityByName(entityName);
+    ignition::math::Box box = entity->CollisionBoundingBox();
+    // ignition::math::Vector3d min, max;
+    // min = box.Min();
+    // max = box.Max();
+  }
   // We got a new message from the Gazebo sensor.  Stuff a
   // corresponding ROS message and publish it.
-  msgs::Contacts contacts;
-  contacts = this->parentSensor->Contacts();
   sensor_msgs::LaserScan laser_msg;
   laser_msg.header.stamp = ros::Time(_msg->time().sec(), _msg->time().nsec());
   laser_msg.header.frame_id = this->frame_name_;
