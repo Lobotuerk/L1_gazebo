@@ -14,9 +14,15 @@
 #include <gazebo/physics/RayShape.hh>
 #include <ignition/math/Box.hh>
 #include <ignition/math/Vector3.hh>
+#include <ignition/math/Pose3.hh>
+#include <ignition/math/Quaternion.hh>
 
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
+#include <geometry_msgs/Transform.h>
+#include <geometry_msgs/Point.h>
+#include <tf2/exceptions.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <bbox.hh>
 
@@ -51,6 +57,8 @@ void Bbox::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
   this->world_ = physics::get_world(worldName);
   // save pointers
   this->sdf = _sdf;
+  this->name_ = _parent->ParentName();
+  // ROS_INFO_STREAM_NAMED("laser", this->name_);
 
   GAZEBO_SENSORS_USING_DYNAMIC_POINTER_CAST;
   this->parent_ray_sensor_ =
@@ -127,6 +135,15 @@ void Bbox::LoadThread()
       ros::VoidPtr(), NULL);
     this->pub_ = this->rosnode_->advertise(ao);
     this->pub_queue_ = this->pmq.addPub<sensor_msgs::LaserScan>();
+
+    ros::AdvertiseOptions ao2 =
+      ros::AdvertiseOptions::create<visualization_msgs::Marker>(
+      this->topic_name_ + "/bboxs", 1,
+      boost::bind(&Bbox::LaserConnect, this),
+      boost::bind(&Bbox::LaserDisconnect, this),
+      ros::VoidPtr(), NULL);
+    this->pub2_ = this->rosnode_->advertise(ao2);
+    this->pub_queue2_ = this->pmq.addPub<visualization_msgs::Marker>();
   }
 
   // Initialize the controller
@@ -159,7 +176,33 @@ void Bbox::LaserDisconnect()
 // Convert new Gazebo message to ROS message and publish it
 void Bbox::OnScan(ConstLaserScanStampedPtr &_msg)
 {
+  physics::EntityPtr current = this->world_->EntityByName(this->name_);
+  ignition::math::Pose3d current_pose = current->WorldPose();
+  current_pose.Inverse();
+  ignition::math::Vector3d current_position = current_pose.Pos();
+  ignition::math::Quaterniond current_rotation = current_pose.Rot();
+  // current_rotation.Invert();
+  geometry_msgs::TransformStamped tf;
+  tf.header.frame_id = "/global";
+  tf.child_frame_id = this->frame_name_;
+  tf.transform.translation.x = current_position.X();
+  tf.transform.translation.y = current_position.Y();
+  tf.transform.translation.z = current_position.Z();
+  tf.transform.rotation.w = current_rotation.W();
+  tf.transform.rotation.x = current_rotation.X();
+  tf.transform.rotation.y = current_rotation.Y();
+  tf.transform.rotation.z = current_rotation.Z();
+  std::vector<std::string> objects;
+  // ROS_INFO_STREAM_NAMED("laser", "Position: " << current_position.X() << "," << current_position.Y() << "," << current_position.Z());
   visualization_msgs::Marker line_list;
+  line_list.header.frame_id = this->frame_name_;
+  line_list.header.stamp = ros::Time::now();
+  line_list.action = visualization_msgs::Marker::ADD;
+  line_list.pose.orientation.w = 1.0;
+  line_list.type = visualization_msgs::Marker::LINE_LIST;
+  line_list.scale.x = 0.01;
+  line_list.color.g = 1.0;
+  line_list.color.a = 1.0;
   physics::MultiRayShapePtr multiRay = this->parent_ray_sensor_->LaserShape();
   unsigned int raycount = multiRay->RayCount();
   // ROS_INFO_STREAM_NAMED("laser", "ray count: " << raycount);
@@ -169,12 +212,125 @@ void Bbox::OnScan(ConstLaserScanStampedPtr &_msg)
     std::string entityName;
     double dist;
     temp_ray->GetIntersection(dist,entityName);
-    ROS_INFO_STREAM_NAMED("laser", "Entity name: " << entityName);
+    if (entityName == "" || std::count(objects.begin(), objects.end(), entityName))
+    {
+      continue;
+    }
+    objects.push_back(entityName);
+    // ROS_INFO_STREAM_NAMED("laser", "Entity name: " << entityName);
     physics::EntityPtr entity = this->world_->EntityByName(entityName);
     ignition::math::Box box = entity->CollisionBoundingBox();
-    // ignition::math::Vector3d min, max;
-    // min = box.Min();
-    // max = box.Max();
+    ignition::math::Vector3d min, max;
+    min = box.Min();
+    max = box.Max();
+    double max_x, max_y, max_z, min_x, min_y, min_z;
+
+    geometry_msgs::PointStamped origin, transformed;
+    origin.point.x = max.X();
+    origin.point.y = max.Y();
+    origin.point.z = max.Z();
+    origin.header = tf.header;
+    try {
+      tf2::doTransform(origin, transformed, tf);
+    }
+    catch (tf2::TransformException &ex) {
+      ROS_WARN("%s",ex.what());
+      return;
+    }
+
+    max_x = transformed.point.x;
+    max_y = transformed.point.y;
+    max_z = transformed.point.z;
+    origin.point.x = min.X();
+    origin.point.y = min.Y();
+    origin.point.z = min.Z();
+    origin.header = tf.header;
+    try {
+      tf2::doTransform(origin, transformed, tf);
+    }
+    catch (tf2::TransformException &ex) {
+      ROS_WARN("%s",ex.what());
+      return;
+    }
+    min_x = transformed.point.x;
+    min_y = transformed.point.y;
+    min_z = transformed.point.z;
+
+    geometry_msgs::Point p1,p2,p3,p4,p5,p6,p7,p8;
+    // p1.x = max.X() - current_position.X();
+    // p1.y = max.Y() - current_position.Y();
+    // p1.z = max.Z() - current_position.Z();
+    // p2.x = min.X() - current_position.X();
+    // p2.y = max.Y() - current_position.Y();
+    // p2.z = max.Z() - current_position.Z();
+    // p3.x = max.X() - current_position.X();
+    // p3.y = min.Y() - current_position.Y();
+    // p3.z = max.Z() - current_position.Z();
+    // p4.x = min.X() - current_position.X();
+    // p4.y = min.Y() - current_position.Y();
+    // p4.z = max.Z() - current_position.Z();
+    // p5.x = max.X() - current_position.X();
+    // p5.y = max.Y() - current_position.Y();
+    // p5.z = min.Z() - current_position.Z();
+    // p6.x = min.X() - current_position.X();
+    // p6.y = max.Y() - current_position.Y();
+    // p6.z = min.Z() - current_position.Z();
+    // p7.x = max.X() - current_position.X();
+    // p7.y = min.Y() - current_position.Y();
+    // p7.z = min.Z() - current_position.Z();
+    // p8.x = min.X() - current_position.X();
+    // p8.y = min.Y() - current_position.Y();
+    // p8.z = min.Z() - current_position.Z();
+    p1.x = max_x;
+    p1.y = max_y;
+    p1.z = max_z;
+    p2.x = min_x;
+    p2.y = max_y;
+    p2.z = max_z;
+    p3.x = max_x;
+    p3.y = min_y;
+    p3.z = max_z;
+    p4.x = min_x;
+    p4.y = min_y;
+    p4.z = max_z;
+    p5.x = max_x;
+    p5.y = max_y;
+    p5.z = min_z;
+    p6.x = min_x;
+    p6.y = max_y;
+    p6.z = min_z;
+    p7.x = max_x;
+    p7.y = min_y;
+    p7.z = min_z;
+    p8.x = min_x;
+    p8.y = min_y;
+    p8.z = min_z;
+    line_list.points.push_back(p1);
+    line_list.points.push_back(p2);
+    line_list.points.push_back(p1);
+    line_list.points.push_back(p3);
+    line_list.points.push_back(p1);
+    line_list.points.push_back(p5);
+    line_list.points.push_back(p8);
+    line_list.points.push_back(p4);
+    line_list.points.push_back(p8);
+    line_list.points.push_back(p7);
+    line_list.points.push_back(p8);
+    line_list.points.push_back(p6);
+    line_list.points.push_back(p5);
+    line_list.points.push_back(p7);
+    line_list.points.push_back(p3);
+    line_list.points.push_back(p7);
+    line_list.points.push_back(p2);
+    line_list.points.push_back(p6);
+    line_list.points.push_back(p2);
+    line_list.points.push_back(p4);
+    line_list.points.push_back(p5);
+    line_list.points.push_back(p6);
+    line_list.points.push_back(p4);
+    line_list.points.push_back(p3);
+    // ROS_INFO_STREAM_NAMED("laser", "Box: max " << max.X() << "," << max.Y() << "," << max.Z() << " - min " << min.X() << "," << min.Y() << "," << min.Z());
+
   }
   // We got a new message from the Gazebo sensor.  Stuff a
   // corresponding ROS message and publish it.
@@ -197,5 +353,6 @@ void Bbox::OnScan(ConstLaserScanStampedPtr &_msg)
             _msg->scan().intensities().end(),
             laser_msg.intensities.begin());
   this->pub_queue_->push(laser_msg, this->pub_);
+  this->pub_queue2_->push(line_list, this->pub2_);
 }
 }

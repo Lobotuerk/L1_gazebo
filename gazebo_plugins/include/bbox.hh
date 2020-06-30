@@ -54,7 +54,9 @@ namespace gazebo
     /// \brief pointer to ros node
     private: ros::NodeHandle* rosnode_;
     private: ros::Publisher pub_;
+    private: ros::Publisher pub2_;
     private: PubQueue<sensor_msgs::LaserScan>::Ptr pub_queue_;
+    private: PubQueue<visualization_msgs::Marker>::Ptr pub_queue2_;
 
     /// \brief topic name
     private: std::string topic_name_;
@@ -80,6 +82,8 @@ namespace gazebo
 
     /// \brief prevents blocking
     private: PubMultiQueue pmq;
+
+    private: std::string name_;
   };
 }
 #endif

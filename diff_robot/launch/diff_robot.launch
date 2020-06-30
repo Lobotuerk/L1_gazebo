@@ -10,6 +10,6 @@
   <!-- Spawn a robot into Gazebo -->
   <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-sdf -file $(find diff_robot)/models/diff_robot_model.sdf -z 1 -x 1.26 -y 3.57 -Y -1.55 -model diff_robot" />
 
-  <node pkg="tf" type="static_transform_publisher" name="sensor_frame_broadcaster" args="0 0 1 0 0 0 base_link sensor_laser 100" />
+  <node pkg="tf" type="static_transform_publisher" name="sensor_frame_broadcaster" args="0 0 0.3 0 0 0 base_link sensor_laser 100" />
 
 </launch>
