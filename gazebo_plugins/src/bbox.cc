@@ -178,7 +178,7 @@ void Bbox::OnScan(ConstLaserScanStampedPtr &_msg)
 {
   physics::EntityPtr current = this->world_->EntityByName(this->name_);
   ignition::math::Pose3d current_pose = current->WorldPose();
-  current_pose.Inverse();
+  current_pose = current_pose.Inverse();
   ignition::math::Vector3d current_position = current_pose.Pos();
   ignition::math::Quaterniond current_rotation = current_pose.Rot();
   // current_rotation.Invert();
@@ -192,6 +192,10 @@ void Bbox::OnScan(ConstLaserScanStampedPtr &_msg)
   tf.transform.rotation.x = current_rotation.X();
   tf.transform.rotation.y = current_rotation.Y();
   tf.transform.rotation.z = current_rotation.Z();
+  // tf.transform.rotation.w = 1;
+  // tf.transform.rotation.x = 0;
+  // tf.transform.rotation.y = 0;
+  // tf.transform.rotation.z = 0;
   std::vector<std::string> objects;
   // ROS_INFO_STREAM_NAMED("laser", "Position: " << current_position.X() << "," << current_position.Y() << "," << current_position.Z());
   visualization_msgs::Marker line_list;
