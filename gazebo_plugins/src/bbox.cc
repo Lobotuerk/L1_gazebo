@@ -58,7 +58,6 @@ void Bbox::Load(sensors::SensorPtr _parent, sdf::ElementPtr _sdf)
   // save pointers
   this->sdf = _sdf;
   this->name_ = _parent->ParentName();
-  // ROS_INFO_STREAM_NAMED("laser", this->name_);
 
   GAZEBO_SENSORS_USING_DYNAMIC_POINTER_CAST;
   this->parent_ray_sensor_ =
@@ -181,7 +180,6 @@ void Bbox::OnScan(ConstLaserScanStampedPtr &_msg)
   current_pose = current_pose.Inverse();
   ignition::math::Vector3d current_position = current_pose.Pos();
   ignition::math::Quaterniond current_rotation = current_pose.Rot();
-  // current_rotation.Invert();
   geometry_msgs::TransformStamped tf;
   tf.header.frame_id = "/global";
   tf.child_frame_id = this->frame_name_;
@@ -192,12 +190,7 @@ void Bbox::OnScan(ConstLaserScanStampedPtr &_msg)
   tf.transform.rotation.x = current_rotation.X();
   tf.transform.rotation.y = current_rotation.Y();
   tf.transform.rotation.z = current_rotation.Z();
-  // tf.transform.rotation.w = 1;
-  // tf.transform.rotation.x = 0;
-  // tf.transform.rotation.y = 0;
-  // tf.transform.rotation.z = 0;
   std::vector<std::string> objects;
-  // ROS_INFO_STREAM_NAMED("laser", "Position: " << current_position.X() << "," << current_position.Y() << "," << current_position.Z());
   visualization_msgs::Marker line_list;
   line_list.header.frame_id = this->frame_name_;
   line_list.header.stamp = ros::Time::now();
@@ -209,7 +202,6 @@ void Bbox::OnScan(ConstLaserScanStampedPtr &_msg)
   line_list.color.a = 1.0;
   physics::MultiRayShapePtr multiRay = this->parent_ray_sensor_->LaserShape();
   unsigned int raycount = multiRay->RayCount();
-  // ROS_INFO_STREAM_NAMED("laser", "ray count: " << raycount);
   for (unsigned int i = 0; i < raycount; i++)
   {
     physics::RayShapePtr temp_ray = multiRay->Ray(i);
@@ -221,7 +213,6 @@ void Bbox::OnScan(ConstLaserScanStampedPtr &_msg)
       continue;
     }
     objects.push_back(entityName);
-    // ROS_INFO_STREAM_NAMED("laser", "Entity name: " << entityName);
     physics::EntityPtr entity = this->world_->EntityByName(entityName);
     ignition::math::Box box = entity->CollisionBoundingBox();
     ignition::math::Vector3d min, max;
@@ -261,30 +252,6 @@ void Bbox::OnScan(ConstLaserScanStampedPtr &_msg)
     min_z = transformed.point.z;
 
     geometry_msgs::Point p1,p2,p3,p4,p5,p6,p7,p8;
-    // p1.x = max.X() - current_position.X();
-    // p1.y = max.Y() - current_position.Y();
-    // p1.z = max.Z() - current_position.Z();
-    // p2.x = min.X() - current_position.X();
-    // p2.y = max.Y() - current_position.Y();
-    // p2.z = max.Z() - current_position.Z();
-    // p3.x = max.X() - current_position.X();
-    // p3.y = min.Y() - current_position.Y();
-    // p3.z = max.Z() - current_position.Z();
-    // p4.x = min.X() - current_position.X();
-    // p4.y = min.Y() - current_position.Y();
-    // p4.z = max.Z() - current_position.Z();
-    // p5.x = max.X() - current_position.X();
-    // p5.y = max.Y() - current_position.Y();
-    // p5.z = min.Z() - current_position.Z();
-    // p6.x = min.X() - current_position.X();
-    // p6.y = max.Y() - current_position.Y();
-    // p6.z = min.Z() - current_position.Z();
-    // p7.x = max.X() - current_position.X();
-    // p7.y = min.Y() - current_position.Y();
-    // p7.z = min.Z() - current_position.Z();
-    // p8.x = min.X() - current_position.X();
-    // p8.y = min.Y() - current_position.Y();
-    // p8.z = min.Z() - current_position.Z();
     p1.x = max_x;
     p1.y = max_y;
     p1.z = max_z;
@@ -333,7 +300,6 @@ void Bbox::OnScan(ConstLaserScanStampedPtr &_msg)
     line_list.points.push_back(p6);
     line_list.points.push_back(p4);
     line_list.points.push_back(p3);
-    // ROS_INFO_STREAM_NAMED("laser", "Box: max " << max.X() << "," << max.Y() << "," << max.Z() << " - min " << min.X() << "," << min.Y() << "," << min.Z());
 
   }
   // We got a new message from the Gazebo sensor.  Stuff a
